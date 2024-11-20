@@ -115,6 +115,36 @@ now change `PARTUUID=64865f4b-02` to `/dev/mapper/sda2_crypt`. Complete line is 
 
 We add the dmcrypt mountpoint to fstab. Hint: The root= Parameter in cmdline.txt is for the Kernel at boottime. At a later stage (I think right before systemd starts) root "/" gets remounted to the value in fstab
 
+We append it to crypttab. This is necessary that "cryptroot-unlock" finds that partition, asks for password and opens the encrypted device. Otherwise we would have to rember and enter the commands by ourselves. 
+
 `echo 'sda2_crypt /dev/sda2 none luks' | sudo tee --append /etc/crypttab > /dev/null` (for external USB-drive)
 or 
 `echo 'sda2_crypt /dev/mmcblk0p2 none luks' | sudo tee --append /etc/crypttab > /dev/null` (for sdcard)
+
+ We now we create the initramfs 
+`sudo update-initramfs -u -k all`
+
+There should be an output like
+
+```
+update-initramfs: Generating /boot/initrd.img-6.6.51+rpt-rpi-v8
+W: Couldn't identify type of root file system for fsck hook
+WARNING: Unknown X keysym "dead_belowmacron"
+WARNING: Unknown X keysym "dead_belowmacron"
+WARNING: Unknown X keysym "dead_belowmacron"
+WARNING: Unknown X keysym "dead_belowmacron"
+'/boot/initrd.img-6.6.51+rpt-rpi-v8' -> '/boot/firmware/initramfs8'
+update-initramfs: Generating /boot/initrd.img-6.6.51+rpt-rpi-2712
+W: Couldn't identify type of root file system for fsck hook
+WARNING: Unknown X keysym "dead_belowmacron"
+WARNING: Unknown X keysym "dead_belowmacron"
+WARNING: Unknown X keysym "dead_belowmacron"
+WARNING: Unknown X keysym "dead_belowmacron"
+'/boot/initrd.img-6.6.51+rpt-rpi-2712' -> '/boot/firmware/initramfs_2712'
+```
+
+Please ignore the warnings and check the last line which confirms modification of /boot/config.txt
+Line "WARNING: Unknown X keysym "dead_belowmacron" only occurs with German Keyboard Layout, this is a bug in debian, see [https://bugs.debian.org/cgi-bin/bugrepo ... bug=903393](https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=903393) and [https://forums.puri.sm/t/what-does-this ... ron/6393/3](https://forums.puri.sm/t/what-does-this-mean-warning-unknown-x-keysym-dead-belowmacron/6393/3) with possible solution if you want to get rid of this warning.
+
+Now reboot. It stops in the initramfs. You can connect via SSH user "root" and the private key. Maybe your IP has changed. Simplest way is to connect a monitor and look for the IP address or watch in your router/DHCP-Server.
+First execute 
