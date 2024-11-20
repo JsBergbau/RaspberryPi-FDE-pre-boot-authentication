@@ -99,7 +99,22 @@ Copy the key to your PC so that you can log into!
 
 Exceute the following in a root shell like sudo -i
 
+`sed -i '$s/$/ cryptdevice=\/dev\/mmcblk0p2:sda2_crypt/' /boot/firmware/cmdline.txt`
 
+Change mmcblk0p2 to sda2 if you are booting from an usb storage drive.
 
+```
+ROOT_CMD="$(sed -n 's|^.*root=\(\S\+\)\s.*|\1|p' /boot/firmware/cmdline.txt)"
+sed -i -e "s|$ROOT_CMD|/dev/mapper/sda2_crypt|g" /boot/firmware/cmdline.txt
+```
+ We change the root point. Rebooting after that causes kernel to stop in initramfs. Since the root filesystem can't be found anymore. **Don't reboot now**
 
- 
+Edit /etc/fstab
+Search for line that contains `/` as the mountpoint. In the example `PARTUUID=64865f4b-02  /               ext4    defaults,noatime  0       1`
+now change `PARTUUID=64865f4b-02` to `/dev/mapper/sda2_crypt`. Complete line is then `/dev/mapper/sda2_crypt  /               ext4    defaults,noatime  0       1`
+
+We add the dmcrypt mountpoint to fstab. Hint: The root= Parameter in cmdline.txt is for the Kernel at boottime. At a later stage (I think right before systemd starts) root "/" gets remounted to the value in fstab
+
+`echo 'sda2_crypt /dev/sda2 none luks' | sudo tee --append /etc/crypttab > /dev/null` (for external USB-drive)
+or 
+`echo 'sda2_crypt /dev/mmcblk0p2 none luks' | sudo tee --append /etc/crypttab > /dev/null` (for sdcard)
