@@ -148,3 +148,48 @@ Line "WARNING: Unknown X keysym "dead_belowmacron" only occurs with German Keybo
 
 Now reboot. It stops in the initramfs. You can connect via SSH user "root" and the private key. Maybe your IP has changed. Simplest way is to connect a monitor and look for the IP address or watch in your router/DHCP-Server.
 First execute 
+`PATH=/sbin:/usr/sbin:/bin:/usr/bin`
+
+Don't know why in dropbear ssh shell the standard path enviroment doesn't include the sbin directories. In initramfs shell it is included in the Path. If somebody knows how to fix this permanently please write.
+
+ Now we reduce the filesystem 
+
+```
+e2fsck -f /dev/sda2
+resize2fs -fM /dev/sda2
+```
+
+resize2fs will tell you the blockcount it reduced. Please note that down. This will be the number for count in the next step.
+If you have an ext4 filesystem on your USB storage media you can mount it (you could also include ntfs-3g or other filesystems in initramfs, but that is not part of this tutorial), otherwise we write directly to the media.
+
+Each ext4 block is 4KB, so multiplying the number of blocks gives you the filesystem size in KB. To speed things up we block copy the whole filesytem. 
+
+```
+dd if=/dev/sda2 of=<mountdir/filename> bs=16M count=<number see below>
+or
+of=/dev/sdb for direct copy, attention all existing data on the USB device is lost then[/b]> 
+```
+
+Get the count by dividing your blockcounts from resize2fs by 4096 (short for * 4 / 16 / 1024) round that number up. So e.g. if you get 922044 as number of blocks, devide that by 4096. This gives 225,10839... and so your count number is 226 . dd in initramfs doesn't support status=progress so you won't see any progress. Make sure there are no errors during copy!
+
+Hint: There is also a luks inplace enryption (cryptsetup-reencrypt). You could add that to your initramfs as well, but for data security reasons I feel more comfortable with this method.
+
+Now we encrypt 
+`cryptsetup -v --type luks2 --cipher aes-xts-plain64 --pbkdf argon2id --key-size 512 --hash sha256 --iter-time 4000 --verify-passphrase --use-random --pbkdf-memory 1048576 --pbkdf-parallel 2 luksFormat /dev/sda2`
+
+
+We use 256 Bit AES (because of XTS we need 512 bit key, one half is for XTS). For password protetion against bruteforce we use the latest hash function argon2id which secures against bruteforce by dedicated hardware and side channel attacks (these one are not so important here). These is the safest setup I currenctly know. Please use a strong password / passphrase!
+Type YES in uppercase letters to confirm overrding your existing files.
+Note: With adding `--pbkdf-memory 1048576` you should use 1 GB of memory. `--pbkdf-parallel 2` uses 2 CPU threads. 
+
+Now we open the encrypted volume:
+
+```
+cryptsetup luksOpen /dev/sda2 sda2_crypt
+#or to enable TRIM support, my recommended way, this sets a FLAG that discards are allowed, see with /usr/sbin/cryptsetup luksDump /dev/sda2 Flags: allow-discards
+cryptsetup --allow-discards --persistent open /dev/sda2 sda2_crypt
+```
+
+Now we copy the data back
+`dd if=<path of "of=" from above> of=/dev/mapper/sda2_crypt bs=1M`
+There is no need for entering a count now, since dd will stop when it has copied our file. 
