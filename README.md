@@ -193,3 +193,7 @@ cryptsetup --allow-discards --persistent open /dev/sda2 sda2_crypt
 Now we copy the data back
 `dd if=<path of "of=" from above> of=/dev/mapper/sda2_crypt bs=1M`
 There is no need for entering a count now, since dd will stop when it has copied our file. 
+
+ Now we have to resize the filesystem to maximum filesize again. Since nothing has been written we can omit the file system check. Just execute now 
+
+ `resize2fs -f /dev/mapper/sda2_crypt`
