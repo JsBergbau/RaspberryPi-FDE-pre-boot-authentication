@@ -83,6 +83,26 @@ BUSYBOX=y
 DROPBEAR=y
 ```
 
+Additionally to the original tutorial you need to modify `/etc/initramfs-tools/modules` and add
+```
+dm_crypt
+aes
+sha256
+```
+Without the AES libraries won't be available in the initramfs. Cryptsetup then can't create the /dev/mapper device and will print an error `device-mapper: reload ioctl on   failed: No such file or directory`. dmesg will show following.
+```
+[   89.086304] device-mapper: table: 254:0: crypt: Error allocating crypto tfm (-ENOENT)
+[   89.094189] device-mapper: ioctl: error adding target to table
+```
+
+Also edit aditionally `/boot/firmware/config.txt` comment line `dtoverlay=vc4-kms-v3d` and add `dtoverlay=vc4-kms-v3d`.
+This setting prevents the screen hanging at a message similiar to `vc4-drm axi:gpu: bcm2712_iommu_of_xlate MMU 1000005200.iommu` or being black in initramfs.
+```
+#dtoverlay=vc4-kms-v3d
+dtoverlay=vc4-fkms-v3d
+```
+
+
 Dropbear ssh Server enables remote unlock. It seems that it supports only public key auth in initramfs mode. So if you don't have a keypair for remote login in, just create one or copy your key 
 
 ```
