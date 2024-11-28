@@ -94,6 +94,8 @@ Without the AES libraries won't be available in the initramfs. Cryptsetup then c
 [   89.086304] device-mapper: table: 254:0: crypt: Error allocating crypto tfm (-ENOENT)
 [   89.094189] device-mapper: ioctl: error adding target to table
 ```
+Don't know why you need sha256. ChatGPT suggested these 3 modules, thats why I copied it.
+
 
 Also edit aditionally `/boot/firmware/config.txt` comment line `dtoverlay=vc4-kms-v3d` and add `dtoverlay=vc4-kms-v3d`.
 This setting prevents the screen hanging at a message similiar to `vc4-drm axi:gpu: bcm2712_iommu_of_xlate MMU 1000005200.iommu` or being black in initramfs.
