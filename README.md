@@ -169,10 +169,6 @@ Please ignore the warnings and check the last line which confirms modification o
 Line "WARNING: Unknown X keysym "dead_belowmacron" only occurs with German Keyboard Layout, this is a bug in debian, see [https://bugs.debian.org/cgi-bin/bugrepo ... bug=903393](https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=903393) and [https://forums.puri.sm/t/what-does-this ... ron/6393/3](https://forums.puri.sm/t/what-does-this-mean-warning-unknown-x-keysym-dead-belowmacron/6393/3) with possible solution if you want to get rid of this warning.
 
 Now reboot. It stops in the initramfs. You can connect via SSH user "root" and the private key. Maybe your IP has changed. Simplest way is to connect a monitor and look for the IP address or watch in your router/DHCP-Server.
-First execute 
-`PATH=/sbin:/usr/sbin:/bin:/usr/bin`
-
-Don't know why in dropbear ssh shell the standard path enviroment doesn't include the sbin directories. In initramfs shell it is included in the Path. If somebody knows how to fix this permanently please write.
 
  Now we reduce the filesystem 
 
@@ -219,3 +215,13 @@ There is no need for entering a count now, since dd will stop when it has copied
  Now we have to resize the filesystem to maximum filesize again. Since nothing has been written we can omit the file system check. Just execute now 
 
  `resize2fs -f /dev/mapper/sda2_crypt`
+
+Now we need a keyboard (don't know how to drop out of dropbear busybox shell) and just type exit (you can type blindly). It now boots, dropbear ssh connection is lost and can be reached again via ssh to the full system.
+
+Now we build the initramfs again `sudo update-initramfs -u -k all`
+
+You can reboot now to check, if everything is working. You see now a password prompt on the monitor and in dropbear you can now execute `cryptroot-unlock`, enter your password and Raspberry-Pi will boot. 
+
+You can now also type blindly your password and hit Enter. With correct password it will boot. Especially if you've enabled the secure RAM deletion please wait about 30 seconds after reboot/powerup before typing blindly. If you have setup another keyboard layout than english it is used in initramfs which means you can type your password without translating it to english keyboard layout as you would have to do with some full disk encryption systems. I think Bitlocker is one of those.
+
+Enjoy!
